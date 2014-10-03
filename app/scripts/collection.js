@@ -10,6 +10,8 @@
       + '      <br/>'
       + '      X songs'
       + '      <br/>'
+      + '       X:XX Total Length'
+      + '       <br/>'
       + '    </p>'
       + '  </div>'
       + '</div>';
@@ -20,8 +22,11 @@
  var updateCollectionView = function() {
    var $collection = $(".collection-container .row");
    $collection.empty();
- 
-   for (var i = 0; i < 33; i++) {
+   var albumLimit = Math.random() * 100;
+   if (albumLimit < 25){
+     albumLimit = 25;
+   }
+   for (var i = 0; i < albumLimit; i++) {
      var $newThumbnail = buildAlbumThumbnail();
      $collection.append($newThumbnail);
    }
