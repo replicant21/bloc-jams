@@ -8,6 +8,10 @@ body {
   background: -webkit-radial-gradient(#2b1339, #380c77);
   background: radial-gradient(#2b1339, #380c77); }
 
+.row {
+  margin-left: 55px;
+  margin-right: 55px; }
+
 body.landing {
   background: #5b5579; }
 
