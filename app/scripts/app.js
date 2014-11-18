@@ -21,9 +21,9 @@
  };
 
 blocJams = angular.module('BlocJams', ['ui.router']);
+
 blocJams.config(['$stateProvider', '$locationProvider', function($stateProvider, $locationProvider) {
    $locationProvider.html5Mode(true);
- 
    $stateProvider.state('landing', {
      url: '/',
      controller: 'Landing.controller',
@@ -40,14 +40,13 @@ blocJams.config(['$stateProvider', '$locationProvider', function($stateProvider,
      controller: 'Album.controller'
    });
  }]);
-// This is a cleaner way to call the controller than crowding it on the module definition.
+
+// Landing controller
 blocJams.controller('Landing.controller', ['$scope', function($scope) {
   $scope.subText = "Turn the music up!";
-  
   $scope.subTextClicked = function() {
      $scope.subText += '!';
    };
-  
   $scope.albumURLs = [
      '/images/album-placeholders/album-1.jpg',
      '/images/album-placeholders/album-2.jpg',
@@ -59,8 +58,9 @@ blocJams.controller('Landing.controller', ['$scope', function($scope) {
      '/images/album-placeholders/album-8.jpg',
      '/images/album-placeholders/album-9.jpg',
    ];
- }]);
+ }]); // end Landing controller
   
+   // Collection controller
   blocJams.controller('Collection.controller', ['$scope', 'SongPlayer', function($scope, SongPlayer) {
     $scope.albums = [];
     for (var i = 0; i < 33; i++) {
@@ -69,8 +69,9 @@ blocJams.controller('Landing.controller', ['$scope', function($scope) {
      $scope.playAlbum = function(album){
      SongPlayer.setSong(album, album.songs[0]); // Targets first song in the array.
    }
-}]);
+  }]); // end Collection controller
 
+  // Album controller
   blocJams.controller('Album.controller', ['$scope', 'SongPlayer', function($scope, SongPlayer) {
    $scope.album = angular.copy(albumPicasso);
     
@@ -97,16 +98,26 @@ blocJams.controller('Landing.controller', ['$scope', function($scope) {
     $scope.pauseSong = function(song) {
       SongPlayer.pause();
     };
- }]);
-   blocJams.controller('PlayerBar.controller', ['$scope', 'SongPlayer', function($scope, SongPlayer) {
-   $scope.songPlayer = SongPlayer;
- }]);
+   }]); // end Album controller
   
-  blocJams.service('SongPlayer', function() {
+  // PlayerBar controller
+   blocJams.controller('PlayerBar.controller', ['$scope', 'SongPlayer', function($scope, SongPlayer) {
+     $scope.songPlayer = SongPlayer;
+     
+     SongPlayer.onTimeUpdate(function(event, time){
+       $scope.$apply(function(){
+         $scope.playTime = time;
+       });
+     });
+     
+   }]); // end PlayerBar controller
+  
+  // SongPlayer controller
+ blocJams.service('SongPlayer', ['$rootScope', function($rootScope) { 
     var currentSoundFile = null;
     var trackIndex = function(album, song) {
      return album.songs.indexOf(song);
-   };
+     };
    return {
      currentSong: null,
      currentAlbum: null,
@@ -146,22 +157,31 @@ blocJams.controller('Landing.controller', ['$scope', function($scope) {
          currentSoundFile.setTime(time);
        }
      },
+     onTimeUpdate: function(callback) {
+        return $rootScope.$on('sound:timeupdate', callback);
+      },
      setSong: function(album, song) {
        if (currentSoundFile) {
-      currentSoundFile.stop();
-      }
+         currentSoundFile.stop();
+       }
        this.currentAlbum = album;
        this.currentSong = song;
-       currentSoundFile = new buzz.sound(song.audioUrl, {
-      formats: [ "mp3" ],
-      preload: true
-    });
-    this.play();
-     }
-   };
- });
 
-   
+       currentSoundFile = new buzz.sound(song.audioUrl, {
+         formats: [ "mp3" ],
+         preload: true
+       });
+
+       currentSoundFile.bind('timeupdate', function(e){
+        $rootScope.$broadcast('sound:timeupdate', this.getTime());
+      });
+
+       this.play();
+     }
+   }
+  }]); // end SongPlayer controller
+
+   // Slider directive
   blocJams.directive('slider', ['$document', function($document){
      // Returns a number between 0 and 1 to determine where the mouse event happened along the slider bar.
      var calculateSliderPercentFromMouseEvent = function($slider, event) {
@@ -185,8 +205,6 @@ blocJams.controller('Landing.controller', ['$scope', function($scope) {
          return Number(value);
        }
      }
-     
-     
      
    return {
      templateUrl: '/templates/directives/slider.html', // We'll create these files shortly.
@@ -251,4 +269,34 @@ blocJams.controller('Landing.controller', ['$scope', function($scope) {
        };
     }
    };
- }]);
+ }]); // end Slider Directive
+  
+  // timecode filter
+  blocJams.filter('timecode', function(){
+   return function(seconds) {
+     seconds = Number.parseFloat(seconds);
+ 
+     // Returned when no time is provided.
+     if (Number.isNaN(seconds)) {
+       return '-:--';
+     }
+ 
+     // make it a whole number
+     var wholeSeconds = Math.floor(seconds);
+ 
+     var minutes = Math.floor(wholeSeconds / 60);
+ 
+     remainingSeconds = wholeSeconds % 60;
+ 
+     var output = minutes + ':';
+ 
+     // zero pad seconds, so 9 seconds should be :09
+     if (remainingSeconds < 10) {
+       output += '0';
+     }
+ 
+     output += remainingSeconds;
+ 
+     return output;
+   }
+ }); // end timecode filter
