@@ -104,6 +104,14 @@ blocJams.controller('Landing.controller', ['$scope', function($scope) {
    blocJams.controller('PlayerBar.controller', ['$scope', 'SongPlayer', function($scope, SongPlayer) {
      $scope.songPlayer = SongPlayer;
      
+     $scope.volumeClass = function() {
+       return {
+         'fa-volume-off': SongPlayer.volume == 0,
+         'fa-volume-down': SongPlayer.volume <= 70 && SongPlayer.volume > 0,
+         'fa-volume-up': SongPlayer.volume > 70
+       }
+     }
+     
      SongPlayer.onTimeUpdate(function(event, time){
        $scope.$apply(function(){
          $scope.playTime = time;
@@ -118,18 +126,22 @@ blocJams.controller('Landing.controller', ['$scope', function($scope) {
     var trackIndex = function(album, song) {
      return album.songs.indexOf(song);
      };
+   
    return {
      currentSong: null,
      currentAlbum: null,
      playing: false,
+     volume: 90,
      play: function() {
        this.playing = true;
        currentSoundFile.play();
      },
+     
      pause: function() {
        this.playing = false;
        currentSoundFile.pause();
      },
+     
      next: function() {
        var currentTrackIndex = trackIndex(this.currentAlbum, this.currentSong);
        currentTrackIndex++;
@@ -140,6 +152,7 @@ blocJams.controller('Landing.controller', ['$scope', function($scope) {
        this.setSong(this.currentAlbum, song);
        this.currentSong = this.currentAlbum.songs[currentTrackIndex];
      },
+     
      previous: function() {
        var currentTrackIndex = trackIndex(this.currentAlbum, this.currentSong);
        currentTrackIndex--;
@@ -150,6 +163,7 @@ blocJams.controller('Landing.controller', ['$scope', function($scope) {
        this.setSong(this.currentAlbum, song);
        this.currentSong = this.currentAlbum.songs[currentTrackIndex];
      },
+     
      seek: function(time) {
        // Checks to make sure that a sound file is playing before seeking.
        if(currentSoundFile) {
@@ -157,9 +171,18 @@ blocJams.controller('Landing.controller', ['$scope', function($scope) {
          currentSoundFile.setTime(time);
        }
      },
+     
      onTimeUpdate: function(callback) {
         return $rootScope.$on('sound:timeupdate', callback);
       },
+     
+     setVolume: function(volume) {
+       if(currentSoundFile){
+         currentSoundFile.setVolume(volume);
+       }
+       this.volume = volume;
+     },
+     
      setSong: function(album, song) {
        if (currentSoundFile) {
          currentSoundFile.stop();
@@ -172,6 +195,8 @@ blocJams.controller('Landing.controller', ['$scope', function($scope) {
          preload: true
        });
 
+       currentSoundFile.setVolume(this.volume);
+       
        currentSoundFile.bind('timeupdate', function(e){
         $rootScope.$broadcast('sound:timeupdate', this.getTime());
       });
