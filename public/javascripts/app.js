@@ -351,8 +351,14 @@ blocJams.controller('Landing.controller', ['$scope', function($scope) {
      SongPlayer.setSong(album, album.songs[0]); // Targets first song in the array.
    }
   }]); // end Collection controller
+  
 
-  // Album controller
+/***
+  *
+  * Album Controller
+  *
+***/
+  
   blocJams.controller('Album.controller', ['$scope', 'SongPlayer', function($scope, SongPlayer) {
    $scope.album = angular.copy(albumPicasso);
     
@@ -375,6 +381,10 @@ blocJams.controller('Landing.controller', ['$scope', function($scope) {
      }
      return 'default';
    };
+    
+    $scope.playSong = function(song) {
+      SongPlayer.setSong($scope.album, song);
+    };
 
     $scope.pauseSong = function(song) {
       SongPlayer.pause();
